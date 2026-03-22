@@ -383,6 +383,36 @@ static void apply_redirections(Command *cmd)
  */
 static void run_pipe(Command *cmd)
 {
-    (void)cmd;
-    fprintf(stderr, "mysh: pipes not yet implemented (bonus stage)\n");
+
+    int pfd[2]; // make pipe moment
+    pipe(pfd);                            
+
+    pid_t left = fork();                  
+    if (left == 0) {
+        dup2(pfd[1], STDOUT_FILENO);     // file out is the write end of the pipe
+        close(pfd[0]);
+        close(pfd[1]); // can close because we dup'ed (dup2) in into the write end
+        execvp(cmd->argv[0], cmd->argv);
+        perror(cmd->argv[0]); // shouldn't hit below unless error
+        exit(1);
+    }
+
+    pid_t right = fork();                
+    if (right == 0) {
+        dup2(pfd[0], STDIN_FILENO);      // file in is the read end of the pipe
+        close(pfd[0]); // can close because we dup'ed (dup2) in into the read end
+        close(pfd[1]);
+        execvp(cmd->pipe_argv[0], cmd->pipe_argv);
+        perror(cmd->pipe_argv[0]); // shouldn't hit below unless error
+        exit(1);
+    }
+
+    close(pfd[0]);
+    close(pfd[1]); // IT MUST CLOSE THIS BECAUSE OF THE FACT IT IS STILL COUNTED AS A POTENTIAL WRITER
+
+    waitpid(left,  NULL, 0);
+    waitpid(right, NULL, 0); // wait for both children to finish up
+
+    //(void)cmd;
+    //fprintf(stderr, "mysh: pipes not yet implemented (bonus stage)\n");
 }
