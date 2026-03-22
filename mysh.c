@@ -283,7 +283,7 @@ static void run_external(Command *cmd)
  *
  * Pattern for output redirection:
  *
- *   int flags = O_WRONLY | O_CREAT | (cmd->append ? O_APPEND : O_TRUNC);
+ *   int flags = O_WRONLY | O_CREAT | (cmd->append ? O_APPEND : O_TRUNC); < going to remove the ternary
  *   int fd = open(cmd->output_file, flags, 0644);
  *   if (fd < 0) { perror("open"); exit(1); }
  *   dup2(fd, STDOUT_FILENO);
@@ -298,7 +298,47 @@ static void apply_redirections(Command *cmd)
 {
     /* [S3] TODO: implement input redirection (cmd->input_file)  */
     /* [S3] TODO: implement output redirection (cmd->output_file) */
-    (void)cmd;  /* remove this line once you start implementing */
+
+    if (cmd->input_file) {
+
+        int fd = open(cmd->input_file, O_RDONLY); // open in read only
+
+        if (fd < 0) { // and error with the file happens (with open)
+            perror("input open fail");
+            exit(1);
+        }
+
+        dup2(fd, STDIN_FILENO); // tell terminal to read from the file
+        
+        close(fd); // close the file descriptor
+
+    }
+
+    if (cmd->output_file) { // check if it has an input file
+
+        // setting the binary flags
+        int flags = O_WRONLY | O_CREAT; // write only and create file if needed
+
+        if (cmd->append) { // checks for > (false) or >> (true)
+            flags |= O_APPEND;
+        } else {
+            flags |= O_TRUNC;
+        }
+
+        int fd = open(cmd->output_file, flags, 0644); // open with write perms as well
+
+        if (fd < 0) { // and error with the file happens (with open)
+            perror("output open fail");
+            exit(1);
+        }
+
+        dup2(fd, STDOUT_FILENO); // tell data to go to the file instead of the terminal screen
+
+        close(fd); // close the file descriptor
+
+    }
+
+    // (void)cmd;  /* remove this line once you start implementing */ < again was here
 }
 
 /* ================================================================== */
