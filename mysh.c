@@ -97,7 +97,7 @@ static int run_builtin(Command *cmd)
     if (cmd->argc == 0 || cmd->argv[0] == NULL)
         return -1;
 
-    /* ---- exit ---- */
+    /* ---- exit ---- */ // < this was lowkey already here
     if (strcmp(cmd->argv[0], "exit") == 0) {
         int status = 0;
         if (cmd->argc > 1) {
@@ -122,6 +122,36 @@ static int run_builtin(Command *cmd)
          *   const char *dir = (cmd->argc > 1) ? cmd->argv[1] : getenv("HOME");
          *   if (!dir) { fprintf(stderr, "mysh: cd: HOME not set\n"); return 0; }
          *   if (chdir(dir) < 0) perror("cd");                                    */
+
+        // lowkey i'm going to write this without ternarys and just so i can understand this code better
+        // find the path < either its just cd so home or has a argument after cd
+        const char *dir = NULL; // holds the directory path
+
+        if (cmd->argc > 1) { // if there is more than one argument
+
+            dir = cmd->argv[1]; // assigned the argument after cd from the original command
+
+        } else { // if there is only one argument
+
+            dir = getenv("HOME"); // grab the home environment like /home/cheemman or the likes
+
+        }
+
+        // error handling for lack of home directory
+        if (dir == NULL) {
+
+            fprintf(stderr, "mysh: cd: HOME not set\n");
+            return 0;
+
+        }
+
+        // error handling for other errors that make chdir() return -1 since chdir is the way to chain pointer
+        if (chdir(dir) < 0) {
+            
+            perror("cd");
+
+        }
+
         return 0;
     }
 
@@ -131,19 +161,35 @@ static int run_builtin(Command *cmd)
          * pwd must be a true built-in so it reflects the shell's own cwd.
          *   char buf[PATH_MAX];
          *   if (getcwd(buf, sizeof(buf)) == NULL) perror("pwd");
-         *   else printf("%s\n", buf);                                            */
+         *   else printf("%s\n", buf);            
+                                         */
+        // lowkey i'm going to write this without ternarys and just so i can understand this code better
+        char buf[PATH_MAX]; // set a  buffer with the largest path size we can handle
+
+        if (getcwd(buf, sizeof(buf)) == NULL) { // ensure that get current working directory returns something in our buffer
+            
+            perror("pwd"); // if it doesnt push this error
+
+        } else {
+
+            printf("%s\n", buf); // else print off the current working directory
+
+        }
+
         return 0;
     }
 
     /* ---- pid ---- */
     if (strcmp(cmd->argv[0], "pid") == 0) {
         /* [S1] TODO: printf("%d\n", (int)getpid()); */
+        printf("%d\n", (int)getpid()); // get the pid_t and turn it to an int before printing it off
         return 0;
     }
 
     /* ---- ppid ---- */
     if (strcmp(cmd->argv[0], "ppid") == 0) {
         /* [S1] TODO: printf("%d\n", (int)getppid()); */
+        printf("%d\n", (int)getppid()); // get the parent pid before turning it to an int and printing it off
         return 0;
     }
 
