@@ -243,6 +243,7 @@ static void run_external(Command *cmd)
         apply_redirections(cmd);   /* Stage 3: set up redirections  */
 
         /* [S2] TODO: call execvp here */
+        execvp(cmd->argv[0], cmd->argv); // replace process with process stated in the argument
 
         perror(cmd->argv[0]);
         exit(1);
@@ -250,9 +251,20 @@ static void run_external(Command *cmd)
     } else {
         /* --- PARENT --- */
         /* [S2] TODO: print PID, waitpid, print exit status */
+        printf("[%d] %s\n", pid, cmd->argv[0]); // print pid
+
         int status;
         waitpid(pid, &status, 0);
-        (void)status;  /* remove this line once you use status */
+
+        if (WIFEXITED(status)) {
+            printf("[%d] %s Exit %d\n", pid, cmd->argv[0], WEXITSTATUS(status)); // prints out when the child returns whether or not it fails
+        }
+
+        if (pid < 0) {
+            perror("fork"); // this displays on a fork
+        }
+
+        //(void)status;  /* remove this line once you use status */ < this line was here just commenting it out so you know
     }
 }
 
